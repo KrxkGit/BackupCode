@@ -34,7 +34,7 @@ VOID OnInit(HWND hDlg)
 	::hMainDlg = hDlg;
 	SendMessage(hDlg, WM_SETICON, 0, (LPARAM)LoadIcon(hInst, MAKEINTRESOURCE(IDI_MY)));
 
-	TCHAR sz[MAX_PATH];
+	//TCHAR sz[MAX_PATH];
 
 	HWND hCombo = GetDlgItem(hDlg, IDC_COMBO1);
 	ComboBox_AddString(hCombo, _T("全部项目"));
@@ -45,11 +45,11 @@ VOID OnInit(HWND hDlg)
 		if (fd.cFileName[0] != _T('.')) {
 			if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {//目录
 				//检查是否为Visual Studio项目
-				wsprintf(sz, _T("%s\\%s.sln"), fd.cFileName, fd.cFileName);
+				//wsprintf(sz, _T("%s\\%s.sln"), fd.cFileName, fd.cFileName);//考虑到Latex的命名不统一，不检测
 
-				if (GetFileAttributes(sz) == INVALID_FILE_ATTRIBUTES) {//非项目
-					continue;
-				}
+				//if (GetFileAttributes(sz) == INVALID_FILE_ATTRIBUTES) {//非项目
+				//	continue;
+				//}
 				ComboBox_AddString(hCombo, fd.cFileName);
 			}
 		}
@@ -61,34 +61,58 @@ VOID OnInit(HWND hDlg)
 VOID DoDelete(LPCTSTR sz)
 {
 	TCHAR szNew[MAX_PATH];
-	wsprintf(szNew, _T("/c del %s\\Debug\\*.ilk"), sz);
+	wsprintf(szNew, _T("/c del %s\\*.log"), sz);
 	ShellExecute(NULL, _T("open"), _T("cmd"), szNew, 0, SW_HIDE);
 
-	wsprintf(szNew, _T("/c del %s\\Debug\\*.pdb"), sz);
+	wsprintf(szNew, _T("/c del %s\\*.aux"), sz);
 	ShellExecute(NULL, _T("open"), _T("cmd"), szNew, 0, SW_HIDE);
 
-	wsprintf(szNew, _T("/c del %s\\x64\\Debug\\*.ilk"), sz);
+	wsprintf(szNew, _T("/c del %s\\*.dvi"), sz);
 	ShellExecute(NULL, _T("open"), _T("cmd"), szNew, 0, SW_HIDE);
 
-	wsprintf(szNew, _T("/c del %s\\x64\\Debug\\*.pdb"), sz);
+	wsprintf(szNew, _T("/c del %s\\*.lof"), sz);
 	ShellExecute(NULL, _T("open"), _T("cmd"), szNew, 0, SW_HIDE);
 
-	wsprintf(szNew, _T("/c del %s\\Release\\*.pdb"), sz);
+	wsprintf(szNew, _T("/c del %s\\*.lot"), sz);
 	ShellExecute(NULL, _T("open"), _T("cmd"), szNew, 0, SW_HIDE);
 
-	wsprintf(szNew, _T("/c del %s\\x64\\Release\\*.pdb"), sz);
+	wsprintf(szNew, _T("/c del %s\\*.bit"), sz);
 	ShellExecute(NULL, _T("open"), _T("cmd"), szNew, 0, SW_HIDE);
 
-	wsprintf(szNew, _T("/c rd /s /q %s\\ipch"), sz);
+	wsprintf(szNew, _T("/c del %s\\*.idx"), sz);
 	ShellExecute(NULL, _T("open"), _T("cmd"), szNew, 0, SW_HIDE);
 
-	wsprintf(szNew, _T("/c rd /s /q %s\\%s\\Debug"), sz, sz);
+	wsprintf(szNew, _T("/c del %s\\*.glo"), sz);
 	ShellExecute(NULL, _T("open"), _T("cmd"), szNew, 0, SW_HIDE);
 
-	wsprintf(szNew, _T("/c rd /s /q %s\\%s\\Release"), sz, sz);
+	wsprintf(szNew, _T("/c del %s\\*.bbl"), sz);
 	ShellExecute(NULL, _T("open"), _T("cmd"), szNew, 0, SW_HIDE);
 
-	wsprintf(szNew, _T("/c rd /s /q %s\\%s\\x64"), sz, sz);
+	wsprintf(szNew, _T("/c del %s\\*.bcf"), sz);
+	ShellExecute(NULL, _T("open"), _T("cmd"), szNew, 0, SW_HIDE);
+
+	wsprintf(szNew, _T("/c del %s\\*.ilg"), sz);
+	ShellExecute(NULL, _T("open"), _T("cmd"), szNew, 0, SW_HIDE);
+
+	wsprintf(szNew, _T("/c del %s\\*.toc"), sz);
+	ShellExecute(NULL, _T("open"), _T("cmd"), szNew, 0, SW_HIDE);
+
+	wsprintf(szNew, _T("/c del %s\\*.ind"), sz);
+	ShellExecute(NULL, _T("open"), _T("cmd"), szNew, 0, SW_HIDE);
+
+	wsprintf(szNew, _T("/c del %s\\*.out"), sz);
+	ShellExecute(NULL, _T("open"), _T("cmd"), szNew, 0, SW_HIDE);
+
+	wsprintf(szNew, _T("/c del %s\\*.blg"), sz);
+	ShellExecute(NULL, _T("open"), _T("cmd"), szNew, 0, SW_HIDE);
+
+	wsprintf(szNew, _T("/c del %s\\*.fdb_latexmk"), sz);
+	ShellExecute(NULL, _T("open"), _T("cmd"), szNew, 0, SW_HIDE);
+
+	wsprintf(szNew, _T("/c del %s\\*.fls"), sz);
+	ShellExecute(NULL, _T("open"), _T("cmd"), szNew, 0, SW_HIDE);
+
+	wsprintf(szNew, _T("/c del %s\\*.run.xml"), sz);
 	ShellExecute(NULL, _T("open"), _T("cmd"), szNew, 0, SW_HIDE);
 }
 
@@ -110,30 +134,7 @@ VOID NTAPI DoBackup(PTP_CALLBACK_INSTANCE pInstance,PVOID Context)
 	}
 	/*****Backup****/
 	DoDelete(szDirect);//删除
-	_tcscpy_s(szNew, MAX_PATH, szDirect);
-
-	_tcscat_s(szDirect, _countof(szDirect), _T("\\*.*"));
-	WIN32_FIND_DATA fd;
-	HANDLE hFind = FindFirstFile(szDirect, &fd);
-	_tcscpy_s(szDirect, _countof(szDirect), szNew);
-
-	for (BOOL b = TRUE; b; b = FindNextFile(hFind, &fd)) {
-		if (fd.cFileName[0] != _T('.') && fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {//子目录：检查DLL
-			if (lstrcmp(_T("Debug"), fd.cFileName) == 0 || lstrcmp(_T("Release"), fd.cFileName) == 0 ||
-				lstrcmp(_T("x64"), fd.cFileName) == 0) {
-				continue;
-			}
-			wsprintf(szNew, _T("/c rd /s /q %s\\%s\\Debug"), szDirect, fd.cFileName);
-			ShellExecute(NULL, _T("open"), _T("cmd"), szNew, 0, SW_HIDE);
-
-			wsprintf(szNew, _T("/c rd /s /q %s\\%s\\Release"), szDirect, fd.cFileName);
-			ShellExecute(NULL, _T("open"), _T("cmd"), szNew, 0, SW_HIDE);
-
-			wsprintf(szNew, _T("/c rd /s /q %s\\%s\\x64"), szDirect, fd.cFileName);
-			ShellExecute(NULL, _T("open"), _T("cmd"), szNew, 0, SW_HIDE);
-		}
-	}
-	FindClose(hFind);
+	
 	InterlockedDecrement(&Count);
 	SendMessage(hMainDlg, WM_COMPLETE, 0, 0);
 
